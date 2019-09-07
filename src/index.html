@@ -1,0 +1,43 @@
+<html>
+	<head>
+		<title>第一个版本的客户端</title>
+    <script type="text/javascript" src="./index.js"></script>
+	</head>
+	<body>
+    <ul class="combar">
+        <li>说明</li>
+        <li>[w]: 前进<br>
+            [s]: 后退<br>
+            [a]: 右转<br>
+            [d]: 左转<br></li>
+    </ul>
+
+    <ul class="navbar">
+      <li>
+        一个简单的空白客户端场景，仅有一个三角形，可视作汽车
+      </li>
+    </ul>
+
+
+		<center>
+			<h2>游戏客户端</h2>
+			<div>
+			  <hr/>
+			  <canvas id="nvmc-canvas" width="600" height="400" style="border:1px solid gray;"></canvas>
+			  <hr/>
+			</div>
+
+			<div>
+			  <h3>日志</h3>
+			  <textarea id="nvmc-log" rows="4" cols="80"></textarea>
+			</div>
+			<div>
+			  <div id="nvmc-fps">FPS</div>
+			  <div id="nvmc-latency">Latency</div>
+			  <div id="nvmc-server-clock-delta">Server Clock Delta</div>
+			  <div id="nvmc-server-time">Server Time</div>
+			</div>
+			<hr/>
+		</center>
+	</body>
+</html>
