@@ -1,7 +1,7 @@
 /**
  * 一个边长2，中心在位于原点的立方体
  */
-export default function Cube() {
+export default function Cube () {
   this.name = 'cube'
   this.vertices = new Float32Array([
     -1.0, -1.0,  1.0,

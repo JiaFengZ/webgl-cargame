@@ -9,6 +9,17 @@ import Triangle from './objects/Triangle.js'
 import { DefaultRace } from './objects/race.js'
 import baseClient from './base'
 import NVMC from '../lib/nvmc.js'
+
+import Cube from './objects/cube.js'
+import Cylinder from './objects/cylinder.js'
+import Cone from './objects/cone.js'
+import Quadrilateral from './objects/Quadrilateral'
+import Building from './objects/building'
+import Track from './objects/track'
+
+import drawCar from './renders/Car'
+import drawTree from './renders/Tree'
+
 const SglMat4 = window.SglMat4
 // 覆盖默认跑道数据
 NVMC.DefaultRace = DefaultRace
@@ -20,35 +31,41 @@ export default class NVMCClient extends baseClient {
      * game实例会被挂在当前客户端对象上
      */
     NVMC.log('初始化...')
+
     const game = this.game
-    const handleKey = {}
-
-    handleKey['W'] = (on) => {
-      game.playerAccelerate = on
-    }
-
-    handleKey['S'] = (on) => {
-      game.playerBrake = on
-    }
-
-    handleKey['A'] = (on) => {
-      game.playerSteerLeft = on
-    }
-
-    handleKey['D'] = (on) => {
-      game.playerSteerRight = on
-    }
-
-    this.handleKey = handleKey
+    const gl = this.ui.gl
+    game.player.color = [1.0, 0.0, 0.0, 1.0]
+    // 添加控制事件
+    this.initMotionKeyHandlers()
     this.stack = new SglMatrixStack()
-    this.initializeObjects(this.ui.gl)
-    this.uniformShader = new UniformShader(this.ui.gl)
+    // 初始化场景源对象
+    this.initializeObjects(gl)
+    this.uniformShader = new UniformShader(gl)
+
     NVMC.log('初始化成功，点击游戏区域激活控制！')
   }
 
   initializeObjects (gl) {
-    this.triangle = new Triangle()
-    this.createObjectBuffers(gl, this.triangle)
+    this.createObjects()
+    this.createBuffers(gl)
+  }
+
+  onDraw () {
+    // 该方法会被游戏框架定时循环调用
+    const gl = this.ui.gl
+    this.drawScene(gl)
+  }
+
+  myPos () {
+    return this.game.state.players.me.dynamicState.position
+  }
+
+  myOri () {
+    return this.game.state.players.me.dynamicState.orientation
+  }
+
+  myFrame () {
+    return this.game.state.players.me.dynamicState.frame
   }
 
   createObjectBuffers (gl, obj) {
@@ -79,6 +96,42 @@ export default class NVMCClient extends baseClient {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null)
   }
 
+  createObjects () {
+    this.cube = new Cube(10)
+    this.cylinder = new Cylinder(10)
+    this.cone = new Cone(10)
+
+    // 跑道
+    this.track = new Track(this.game.race.track)
+    // 场地
+    const bbox = this.game.race.bbox
+    const quad = [
+      bbox[0], bbox[1] - 0.01, bbox[2],
+      bbox[3], bbox[1] - 0.01, bbox[2],
+      bbox[3], bbox[1] - 0.01, bbox[5],
+      bbox[0], bbox[1] - 0.01, bbox[5]
+    ]
+    this.ground = new Quadrilateral(quad)
+    // 建筑
+    const gameBuildings = this.game.race.buildings
+    this.buildings = new Array(gameBuildings.length)
+    for (let i = 0; i < gameBuildings.length; ++i) {
+      this.buildings[i] = new Building(gameBuildings[i])
+    }
+  }
+
+  createBuffers (gl) {
+    this.createObjectBuffers(gl, this.cube)
+    this.createObjectBuffers(gl, this.cylinder)
+    this.createObjectBuffers(gl, this.cone)
+    this.createObjectBuffers(gl, this.track)
+    this.createObjectBuffers(gl, this.ground)
+
+    for (let i = 0; i < this.buildings.length; ++i) {
+      this.createObjectBuffers(gl, this.buildings[i])
+    }
+  }
+
   drawObject (gl, obj, fillColor, lineColor) {
     gl.bindBuffer(gl.ARRAY_BUFFER, obj.vertexBuffer)
     gl.enableVertexAttribArray(this.uniformShader.aPositionIndex)
@@ -103,53 +156,91 @@ export default class NVMCClient extends baseClient {
   }
 
   drawScene (gl) {
-    const height = this.ui.height
+    const pos = this.myPos()
     const width = this.ui.width
-    const ratio = width / height
-    const stack = this.stack
-  
+    const height = this.ui.height
+
     gl.viewport(0, 0, width, height)
-  
-    gl.clearColor(0.34, 0.5, 0.74, 1.0)
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  
+
+    // 清除绘图环境
+    gl.clearColor(0.4, 0.6, 0.8, 1.0)
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+    // 开启深度检测
+    gl.enable(gl.DEPTH_TEST)
     gl.useProgram(this.uniformShader)
-    // 传递投影矩阵
-    gl.uniformMatrix4fv(this.uniformShader.uProjectionMatrixLocation, false, SglMat4.perspective(3.14 / 4, ratio, 1, 100))
-  
-    if (!this.first) {
-      this.first = true
-      this.initPos = this.game.state.players.me.dynamicState.position
-    }
-  
-    let pos = this.game.state.players.me.dynamicState.position
-    // 视图矩阵
-    const invV = SglMat4.lookAt([this.initPos[0], 10, this.initPos[2]], this.initPos, [0, 0, -1])
+
+    // 设置投影矩阵
+    const ratio = width / height
+    const bbox = this.game.race.bbox
+    let winW = (bbox[3] - bbox[0])
+    let winH = (bbox[5] - bbox[2])
+    winW = winW * ratio * (winH / winW)
+    const P = SglMat4.ortho([-winW / 2, -winH / 2, 0.0], [winW / 2, winH / 2, 21.0])
+    gl.uniformMatrix4fv(this.uniformShader.uProjectionMatrixLocation, false, P)
+
+    const stack = this.stack
     stack.loadIdentity()
+    // 设置视图矩阵（观察者视线）
+    const invV = SglMat4.lookAt([0, 20, 0], [0, 0, 0], [1, 0, 0])
     stack.multiply(invV)
-  
-    const T = SglMat4.translation(pos) // 平移
-    stack.multiply(T)
-  
-    const D = SglMat4.rotationAngleAxis(this.game.state.players.me.dynamicState.orientation, [0, 1, 0]) // 旋转
-    stack.multiply(D)
-    // 传递模型视图矩阵
-    gl.uniformMatrix4fv(this.uniformShader.uModelViewMatrixLocation, false, stack.matrix)
-  
+    stack.push()
+    const M_9 = this.myFrame() // 获取矩阵快照
+    stack.multiply(M_9)
+    // 绘制汽车
     this.drawCar(gl)
-  
-    // 释放程序
+    stack.pop()
+
+    // 绘制树木
+    const trees = this.game.race.trees
+    for (let t in trees) {
+      stack.push()
+      const M_8 = SglMat4.translation(trees[t].position)
+      stack.multiply(M_8)
+      this.drawTree(gl)
+      stack.pop()
+    }
+
+    gl.uniformMatrix4fv(this.uniformShader.uModelViewMatrixLocation, false, stack.matrix)
+    this.drawObject(gl, this.track, [0.9, 0.8, 0.7, 1.0], [0, 0, 0, 1.0]) // 绘制跑道
+    this.drawObject(gl, this.ground, [0.3, 0.7, 0.2, 1.0], [0, 0, 0, 1.0]) // 绘制场地
+
+    // 绘制建筑
+    for (let i in this.buildings) {
+      this.drawObject(gl, this.buildings[i], [0.8, 0.8, 0.8, 1.0], [0.2, 0.2, 0.2, 1.0])
+    }
+
     gl.useProgram(null)
     gl.disable(gl.DEPTH_TEST)
   }
 
   drawCar (gl) {
-    this.drawObject(gl, this.triangle, [1, 1, 1, 1], [1, 1, 1, 1])
+    const { uModelViewMatrixLocation } = this.uniformShader
+    const { stack, cylinder, cone, cube, drawObject } = this
+    drawCar(gl, stack, cylinder, cone, cube, uModelViewMatrixLocation, drawObject.bind(this))
   }
 
-  onDraw () {
-    const gl = this.ui.gl
-    this.drawScene(gl)
+  drawTree (gl) {
+    const { uModelViewMatrixLocation } = this.uniformShader
+    const { stack, cylinder, cone, drawObject } = this
+    drawTree(gl, stack, cylinder, cone, uModelViewMatrixLocation, drawObject.bind(this))
+  }
+
+  initMotionKeyHandlers () {
+    const game = this.game
+    const carMotionKey = {}
+    carMotionKey['W'] = (on) => {
+      game.playerAccelerate = on
+    }
+    carMotionKey['S'] = (on) => {
+      game.playerBrake = on
+    }
+    carMotionKey['A'] = (on) => {
+      game.playerSteerLeft = on
+    }
+    carMotionKey['D'] = (on) => {
+      game.playerSteerRight = on
+    }
+    this.carMotionKey = carMotionKey
   }
 
   onPlayerJoin (playerID) {
@@ -162,11 +253,11 @@ export default class NVMCClient extends baseClient {
   }
   
   onKeyDown (keyCode, event) {
-    this.handleKey[keyCode] && this.handleKey[keyCode](true)
+    this.carMotionKey[keyCode] && this.carMotionKey[keyCode](true)
   }
   
   onKeyUp (keyCode, event) {
-    this.handleKey[keyCode] && this.handleKey[keyCode](false)
+    this.carMotionKey[keyCode] && this.carMotionKey[keyCode](false)
   }
   
 }

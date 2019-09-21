@@ -2,11 +2,10 @@
  * 圆柱体，和圆锥体生成类似，resolution 为 n 时，包含 2n+2个顶点和4n个三角形
  * 顶点索引关系：0 - n-1 -> 底面 n - 2n-1 -> 顶面 2n -> 底面中心 2n+1->顶面中心
  */
-export default function Cylinder () {
+export default function Cylinder (resolution) {
   this.name = "cylinder";
 
 	// 顶点
-	
 	this.vertices = new Float32Array(3 * (2 * resolution + 2));
 	
 	let radius = 1.0

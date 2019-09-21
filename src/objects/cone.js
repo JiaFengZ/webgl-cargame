@@ -21,7 +21,7 @@ export default function Cone (resolution) {
     angle += step * i
     this.vertices[vertexoffset] = radius * Math.cos(angle)
     this.vertices[vertexoffset + 1] = 0
-    this.vertexoffset[vertexoffset + 2] = radius * Math.sin(angle)
+    this.vertices[vertexoffset + 2] = radius * Math.sin(angle)
     vertexoffset += 3
   }
   // 底面中点
@@ -30,7 +30,7 @@ export default function Cone (resolution) {
   this.vertices[vertexoffset + 2] = 0.0
 
   // 定义三角形
-  let triangleIndices = new Float32Array(3 * 2 * resolution) // 三角形索引
+  this.triangleIndices = new Float32Array(3 * 2 * resolution) // 三角形索引
   // 底面部分三角形
   let triangleoffset = 0
   for (let i = 0; i < resolution; i++) {
