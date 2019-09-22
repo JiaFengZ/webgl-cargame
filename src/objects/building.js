@@ -1,7 +1,7 @@
 /**
  * 建筑
  */
-export default function Building (b) {
+export default function Building(b) {
 	this.name = "Building"
 
 	let nv = b.pointsCount
@@ -38,7 +38,7 @@ export default function Building (b) {
 		this.triangleIndices[triangleOffset + 2] = nv + i
 		triangleOffset += 3
 	}
-	
+
 	/* triangles for the roof */
 	for (let i = 0; i < nv - 2; ++i) {
 		this.triangleIndices[triangleOffset + 0] = nv
@@ -47,6 +47,6 @@ export default function Building (b) {
 		triangleOffset += 3
 	}
 
-	this.numVertices  = nv * 2
+	this.numVertices = nv * 2
 	this.numTriangles = this.triangleIndices.length / 3
 }

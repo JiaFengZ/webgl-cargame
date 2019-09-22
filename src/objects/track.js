@@ -1,7 +1,7 @@
 /**
  * 跑道
  */
-export default function Track (track) {
+export default function Track(track) {
 	this.name = "Track"
 
 	let nv = track.pointsCount - 1 // 跑道分割成的四边形个数
@@ -27,7 +27,7 @@ export default function Track (track) {
 	this.triangleIndices = new Uint16Array(nv * 3 * 2) // 三角形顶点索引
 
 	let triangleoffset = 0
-	for (let i=0; i< nv; ++i) {
+	for (let i = 0; i < nv; ++i) {
 		this.triangleIndices[triangleoffset + 0] = i
 		this.triangleIndices[triangleoffset + 1] = (i + 1) % nv
 		this.triangleIndices[triangleoffset + 2] = nv + (i + 1) % nv
@@ -39,6 +39,6 @@ export default function Track (track) {
 		triangleoffset += 3
 	}
 
-	this.numVertices  = nv * 2
+	this.numVertices = nv * 2
 	this.numTriangles = this.triangleIndices.length / 3
 }

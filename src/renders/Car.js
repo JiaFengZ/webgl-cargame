@@ -9,7 +9,7 @@ import drawWheel from './Wheel'
  * @param {object} uModelViewMatrixLocation 模型视图矩阵变量在着色器中位置
  * @param {function} drawObject 绘制方法
  */
-export default function drawCar (gl, stack, cylinder, cone, cube, uModelViewMatrixLocation, drawObject) {
+export default function drawCar(gl, stack, cylinder, cone, cube, uModelViewMatrixLocation, drawObject) {
 	stack.push()
 	// M_7 平移柱体到合适的位置，然后变换为轮子
 	var M_7 = SglMat4.translation([1, 0.3, 1.4])
@@ -17,7 +17,7 @@ export default function drawCar (gl, stack, cylinder, cone, cube, uModelViewMatr
 	drawWheel(gl, stack, cylinder, uModelViewMatrixLocation, drawObject)
 	stack.pop()
 
-	stack.push() 
+	stack.push()
 	// M_5 平移柱体到合适的位置，然后变换为轮子
 	var M_5 = SglMat4.translation([-1, 0.3, 1.4])
 	stack.multiply(M_5)

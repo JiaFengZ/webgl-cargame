@@ -2,15 +2,15 @@
  * 场地
  */
 
-export default function Quadrilateral (quad, scale) {
+export default function Quadrilateral(quad, scale) {
 	let nv = 4
-	this.vertices = new Float32Array(nv  * 3)
+	this.vertices = new Float32Array(nv * 3)
 	for (let i = 0; i < nv * 3; ++i) {
-    this.vertices[i] = quad[i]
-  }
-	
+		this.vertices[i] = quad[i]
+	}
+
 	this.triangleIndices = new Uint16Array(2 * 3)
- 
+
 	this.triangleIndices[0] = 0
 	this.triangleIndices[1] = 1
 	this.triangleIndices[2] = 2
@@ -19,6 +19,6 @@ export default function Quadrilateral (quad, scale) {
 	this.triangleIndices[4] = 2
 	this.triangleIndices[5] = 3
 
-	this.numVertices  = 4
+	this.numVertices = 4
 	this.numTriangles = 2
 };
