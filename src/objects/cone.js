@@ -5,7 +5,7 @@
  * 顶点顺序：0->圆锥顶点，1-n->底面顶点，n+1->底面圆心
  * 共n+2个顶点
  */
-export default function Cone (resolution) {
+export default function Cone(resolution) {
   this.name = 'cone'
   this.vertices = new Float32Array(3 * (resolution + 2)) // n+2个顶点
   // 圆锥顶点
@@ -41,5 +41,5 @@ export default function Cone (resolution) {
   }
 
   this.numVertices = this.vertices.length / 3
-	this.numTriangles = this.triangleIndices.length / 3
+  this.numTriangles = this.triangleIndices.length / 3
 }
