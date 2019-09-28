@@ -20,6 +20,9 @@ import Track from './objects/track'
 import drawCar from './renders/Car'
 import drawTree from './renders/Tree'
 
+import ChaseCamera from './cameras/ChaseCamera'
+import PhotographerCamera from './cameras/PhotographerCamera'
+
 const SglMat4 = window.SglMat4
 // 覆盖默认跑道数据
 NVMC.DefaultRace = DefaultRace
@@ -40,6 +43,8 @@ export default class NVMCClient extends baseClient {
     this.stack = new SglMatrixStack()
     // 初始化场景源对象
     this.initializeObjects(gl)
+    // 初始化观察相机
+    this.initializeCameras()
     this.uniformShader = new UniformShader(gl)
 
     NVMC.log('初始化成功，点击游戏区域激活控制！')
@@ -48,6 +53,27 @@ export default class NVMCClient extends baseClient {
   initializeObjects (gl) {
     this.createObjects()
     this.createBuffers(gl)
+  }
+
+  initializeCameras () {
+    this.cameras = []
+    this.cameras[0] = new ChaseCamera()
+    this.cameras[1] = new PhotographerCamera()
+    this.n_cameras = 2
+    this.currentCamera = 0
+    this.cameras[1].position = this.game.race.photoPosition
+  }
+
+  nextCamera () {
+    if (this.n_cameras - 1 > this.currentCamera) {
+      this.currentCamera++
+    }
+  }
+
+  prevCamera () {
+    if (0 < this.currentCamera) {
+      this.currentCamera--
+    }
   }
 
   onDraw () {
@@ -159,6 +185,7 @@ export default class NVMCClient extends baseClient {
     const pos = this.myPos()
     const width = this.ui.width
     const height = this.ui.height
+    const ratio = width / height
 
     gl.viewport(0, 0, width, height)
 
@@ -170,19 +197,22 @@ export default class NVMCClient extends baseClient {
     gl.useProgram(this.uniformShader)
 
     // 设置投影矩阵
-    const ratio = width / height
-    const bbox = this.game.race.bbox
-    let winW = (bbox[3] - bbox[0])
-    let winH = (bbox[5] - bbox[2])
-    winW = winW * ratio * (winH / winW)
-    const P = SglMat4.ortho([-winW / 2, -winH / 2, 0.0], [winW / 2, winH / 2, 21.0])
-    gl.uniformMatrix4fv(this.uniformShader.uProjectionMatrixLocation, false, P)
+    // const ratio = width / height
+    // const bbox = this.game.race.bbox
+    // let winW = (bbox[3] - bbox[0])
+    // let winH = (bbox[5] - bbox[2])
+    // winW = winW * ratio * (winH / winW)
+    // const P = SglMat4.ortho([-winW / 2, -winH / 2, 0.0], [winW / 2, winH / 2, 21.0])
+    // gl.uniformMatrix4fv(this.uniformShader.uProjectionMatrixLocation, false, P)
+    gl.uniformMatrix4fv(this.uniformShader.uProjectionMatrixLocation, false, SglMat4.perspective(3.14 / 4, ratio, 1, 200))
 
     const stack = this.stack
     stack.loadIdentity()
     // 设置视图矩阵（观察者视线）
-    const invV = SglMat4.lookAt([0, 20, 0], [0, 0, 0], [1, 0, 0])
-    stack.multiply(invV)
+    //const invV = SglMat4.lookAt([0, 20, 0], [0, 0, 0], [1, 0, 0])
+    //stack.multiply(invV)
+    this.cameras[this.currentCamera].setView(this.stack, this.myFrame())
+
     stack.push()
     const M_9 = this.myFrame() // 获取矩阵快照
     stack.multiply(M_9)
@@ -254,10 +284,32 @@ export default class NVMCClient extends baseClient {
   
   onKeyDown (keyCode, event) {
     this.carMotionKey[keyCode] && this.carMotionKey[keyCode](true)
+    this.cameras[this.currentCamera].keyDown(keyCode)
   }
   
   onKeyUp (keyCode, event) {
+    if (keyCode === '2') {
+      this.nextCamera()
+      return
+    }
+    if (keyCode == '1') {
+      this.prevCamera()
+      return
+    }
     this.carMotionKey[keyCode] && this.carMotionKey[keyCode](false)
+    this.cameras[this.currentCamera].keyUp(keyCode)
+  }
+
+  onMouseButtonDown (button, x, y, event) {
+    this.cameras[this.currentCamera].mouseButtonDown(x,y)
+  }
+
+  onMouseButtonUp (button, x, y, event) {
+    this.cameras[this.currentCamera].mouseButtonUp()
+  }
+
+  onMouseMove (x, y, event) {
+    this.cameras[this.currentCamera].mouseMove(x,y)
   }
   
 }
