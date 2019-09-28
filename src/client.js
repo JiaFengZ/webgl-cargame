@@ -22,6 +22,7 @@ import drawTree from './renders/Tree'
 
 import ChaseCamera from './cameras/ChaseCamera'
 import PhotographerCamera from './cameras/PhotographerCamera'
+import ObserverCamera from './cameras/ObverserCamera'
 
 const SglMat4 = window.SglMat4
 // 覆盖默认跑道数据
@@ -59,9 +60,14 @@ export default class NVMCClient extends baseClient {
     this.cameras = []
     this.cameras[0] = new ChaseCamera()
     this.cameras[1] = new PhotographerCamera()
-    this.n_cameras = 2
-    this.currentCamera = 0
+    this.cameras[2] = new ObserverCamera()
+    this.n_cameras = 3
+    this.currentCamera = 2
     this.cameras[1].position = this.game.race.photoPosition
+    this.cameras[2].position = this.game.race.observerPosition
+
+    this.cameras[2].width = this.ui.width
+	  this.cameras[2].height = this.ui.height
   }
 
   nextCamera () {
@@ -283,7 +289,9 @@ export default class NVMCClient extends baseClient {
   }
   
   onKeyDown (keyCode, event) {
-    this.carMotionKey[keyCode] && this.carMotionKey[keyCode](true)
+    if (this.currentCamera !== 2) {
+      this.carMotionKey[keyCode] && this.carMotionKey[keyCode](true)
+    }
     this.cameras[this.currentCamera].keyDown(keyCode)
   }
   
@@ -296,7 +304,9 @@ export default class NVMCClient extends baseClient {
       this.prevCamera()
       return
     }
-    this.carMotionKey[keyCode] && this.carMotionKey[keyCode](false)
+    if (this.currentCamera !== 2) {
+      this.carMotionKey[keyCode] && this.carMotionKey[keyCode](false)
+    }
     this.cameras[this.currentCamera].keyUp(keyCode)
   }
 
