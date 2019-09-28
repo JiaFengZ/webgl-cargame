@@ -4,7 +4,7 @@ export default class ObserverCamera {
     this.currentMode = 0
     this.V = SglMat4.identity()
     SglMat4.col$(this.V, 3, [0.0, 20.0, 100.0, 1])
-    this.position =[]
+    this.position = []
     // wasd 模式控制量
     this.t_V = [0, 0, 0, 0.0]
     this.alpha = 0;
@@ -169,20 +169,20 @@ export default class ObserverCamera {
   }
   mouseMove(x, y) {
     if (this.currentMode == 0) {
-			if (this.aiming) {
-				this.alpha = x - this.start_x
-				this.beta = -(y - this.start_y)
-				this.start_x = x
-				this.start_y = y
-				this.updateCamera()
-			}
-			return
+      if (this.aiming) {
+        this.alpha = x - this.start_x
+        this.beta = -(y - this.start_y)
+        this.start_x = x
+        this.start_y = y
+        this.updateCamera()
+      }
+      return
     }
     if (!this.orbiting) {
       return
     }
     const newX = x
-		const newY = y
+    const newY = y
 
     const p0_prime = this.computeVector(this.currX, this.currY)
     const p1_prime = this.computeVector(newX, newY)
@@ -204,8 +204,8 @@ export default class ObserverCamera {
   }
   setView(stack) {
     this.updateCamera()
-		const invV = SglMat4.inverse(this.V)
-		stack.multiply(invV)
+    const invV = SglMat4.inverse(this.V)
+    stack.multiply(invV)
     stack.multiply(this.tbMatrix)
   }
 }
