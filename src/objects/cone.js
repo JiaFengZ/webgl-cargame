@@ -20,7 +20,7 @@ export default function Cone(resolution) {
   for (let i = 0; i < resolution; i++) {
     angle += step * i
     this.vertices[vertexoffset] = radius * Math.cos(angle)
-    this.vertices[vertexoffset + 1] = 0
+    this.vertices[vertexoffset + 1] = 0.0
     this.vertices[vertexoffset + 2] = radius * Math.sin(angle)
     vertexoffset += 3
   }
@@ -30,9 +30,16 @@ export default function Cone(resolution) {
   this.vertices[vertexoffset + 2] = 0.0
 
   // 定义三角形
-  this.triangleIndices = new Float32Array(3 * 2 * resolution) // 三角形索引
-  // 底面部分三角形
+  this.triangleIndices = new Uint16Array(3 * 2 * resolution) // 三角形索引
+  // 侧面三角形
   let triangleoffset = 0
+  for (let i = 0; i < resolution; i++) {
+    this.triangleIndices[triangleoffset] = 0
+    this.triangleIndices[triangleoffset + 1] = 1 + (i % resolution)
+    this.triangleIndices[triangleoffset + 2] = 1 + ((i + 1) % resolution)
+    triangleoffset += 3
+  }
+  // 底面部分三角形
   for (let i = 0; i < resolution; i++) {
     this.triangleIndices[triangleoffset] = resolution + 1 // 底面中点
     this.triangleIndices[triangleoffset + 1] = 1 + (i % resolution)
