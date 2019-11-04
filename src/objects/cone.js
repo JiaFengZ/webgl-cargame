@@ -18,7 +18,7 @@ export default function Cone(resolution) {
   let step = 2 * Math.PI / resolution
   let vertexoffset = 3
   for (let i = 0; i < resolution; i++) {
-    angle += step * i
+    angle = step * i
     this.vertices[vertexoffset] = radius * Math.cos(angle)
     this.vertices[vertexoffset + 1] = 0.0
     this.vertices[vertexoffset + 2] = radius * Math.sin(angle)

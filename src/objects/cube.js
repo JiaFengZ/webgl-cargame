@@ -13,7 +13,7 @@ export default function Cube() {
     -1.0, 1.0, -1.0,
     1.0, 1.0, -1.0
   ])
-  this.triangleIndices = new Float32Array([
+  this.triangleIndices = new Uint16Array([
     0, 1, 2, 2, 1, 3,  // front
     5, 4, 7, 7, 4, 6,  // back
     4, 0, 6, 6, 0, 2,  // left
