@@ -1,3 +1,6 @@
+/**
+ * 摄影师观察视图
+ */
 export default class PhotographerCamera {
   constructor() {
     this.position = [0, 0, 0] // 观察者位置
