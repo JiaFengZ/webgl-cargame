@@ -10,11 +10,11 @@ export default class DriverCamera {
   mouseMove() {}
   mouseButtonDown() {}
   mouseButtonUp() {}
-  setView(stack, view) {
+  setView(stack, frame) {
     let driverFrame = SglMat4.dup(frame)
     let pos = SglMat4.col(driverFrame, 3)
     SglMat4.col$(driverFrame, 3, SglVec4.add(pos, [0, 1.5, 0, 0]))
-    let inv =  SglMat4.inverse(driverFrame)
+    let invV =  SglMat4.inverse(driverFrame)
     stack.multiply(invV)
   }
 }

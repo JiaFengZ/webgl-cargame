@@ -5,6 +5,7 @@
  */
 
 import UniformShader from './shaders/shaders.js'
+import PerVertexColorShader from './shaders/perVertexColorShader'
 import Triangle from './objects/Triangle.js'
 import { DefaultRace } from './objects/race.js'
 import baseClient from './base'
@@ -16,13 +17,16 @@ import Cone from './objects/cone.js'
 import Quadrilateral from './objects/Quadrilateral'
 import Building from './objects/building'
 import Track from './objects/track'
+import { Cabin, RearMirror, Windshield } from './objects/cabin'
 
 import drawCar from './renders/Car'
 import drawTree from './renders/Tree'
+import { drawWindshield, drawRearmirror, drawCarbin } from './renders/Cabin'
 
 import ChaseCamera from './cameras/ChaseCamera'
 import PhotographerCamera from './cameras/PhotographerCamera'
 import ObserverCamera from './cameras/ObverserCamera'
+import DriverCamera from './cameras/DriverCamera'
 
 const SglMat4 = window.SglMat4
 // 覆盖默认跑道数据
@@ -47,6 +51,7 @@ export default class NVMCClient extends baseClient {
     // 初始化观察相机
     this.initializeCameras()
     this.uniformShader = new UniformShader(gl)
+    this.perVertexColorShader = new PerVertexColorShader(gl)
 
     NVMC.log('初始化成功，点击游戏区域激活控制！')
   }
@@ -61,8 +66,9 @@ export default class NVMCClient extends baseClient {
     this.cameras[0] = new ChaseCamera()
     this.cameras[1] = new PhotographerCamera()
     this.cameras[2] = new ObserverCamera()
-    this.n_cameras = 3
-    this.currentCamera = 2
+    this.cameras[3] = new DriverCamera()
+    this.n_cameras = 4
+    this.currentCamera = 3
     this.cameras[1].position = this.game.race.photoPosition
     this.cameras[2].position = this.game.race.observerPosition
 
@@ -128,6 +134,23 @@ export default class NVMCClient extends baseClient {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null)
   }
 
+  createColoredObjectBuffers (gl, obj) {
+    obj.vertexBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, obj.vertexBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, obj.vertices, gl.STATIC_DRAW)
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+
+    obj.colorBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, obj.colorBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, obj.vertex_color, gl.STATIC_DRAW)
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+
+    obj.indexBufferTriangles = gl.createBuffer()
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, obj.indexBufferTriangles)
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, obj.triangleIndices, gl.STATIC_DRAW)
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null)
+  }
+
   createObjects () {
     this.cube = new Cube(10)
     this.cylinder = new Cylinder(10)
@@ -144,6 +167,10 @@ export default class NVMCClient extends baseClient {
       bbox[0], bbox[1] - 0.01, bbox[5]
     ]
     this.ground = new Quadrilateral(quad)
+    this.cabin = new Cabin()
+    this.windshield = new Windshield()
+    this.rearmirror = new RearMirror()
+
     // 建筑
     const gameBuildings = this.game.race.buildings
     this.buildings = new Array(gameBuildings.length)
@@ -158,6 +185,9 @@ export default class NVMCClient extends baseClient {
     this.createObjectBuffers(gl, this.cone)
     this.createObjectBuffers(gl, this.track)
     this.createObjectBuffers(gl, this.ground)
+    this.createColoredObjectBuffers(gl, this.cabin)
+    this.createColoredObjectBuffers(gl, this.windshield)
+    this.createColoredObjectBuffers(gl, this.rearmirror)
 
     for (let i = 0; i < this.buildings.length; ++i) {
       this.createObjectBuffers(gl, this.buildings[i])
@@ -200,7 +230,6 @@ export default class NVMCClient extends baseClient {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
     // 开启深度检测
     gl.enable(gl.DEPTH_TEST)
-    gl.useProgram(this.uniformShader)
 
     // 设置投影矩阵
     // const ratio = width / height
@@ -210,22 +239,34 @@ export default class NVMCClient extends baseClient {
     // winW = winW * ratio * (winH / winW)
     // const P = SglMat4.ortho([-winW / 2, -winH / 2, 0.0], [winW / 2, winH / 2, 21.0])
     // gl.uniformMatrix4fv(this.uniformShader.uProjectionMatrixLocation, false, P)
-    gl.uniformMatrix4fv(this.uniformShader.uProjectionMatrixLocation, false, SglMat4.perspective(3.14 / 4, ratio, 1, 200))
 
     const stack = this.stack
     stack.loadIdentity()
+
+    if (this.currentCamera === 3) {
+      drawCarbin(gl, this.perVertexColorShader, this.cabin)
+    } else {
+      gl.disable(gl.STENCIL_TEST)
+    }
+
     // 设置视图矩阵（观察者视线）
     //const invV = SglMat4.lookAt([0, 20, 0], [0, 0, 0], [1, 0, 0])
     //stack.multiply(invV)
     this.cameras[this.currentCamera].setView(this.stack, this.myFrame())
 
-    stack.push()
-    const M_9 = this.myFrame() // 获取矩阵快照
-    stack.multiply(M_9)
-    // 绘制汽车
-    this.drawCar(gl)
-    stack.pop()
+    if (this.currentCamera !== 3) {
+      stack.push()
+      const M_9 = this.myFrame() // 获取矩阵快照
+      stack.multiply(M_9)
+      // 绘制汽车
+      gl.useProgram(this.uniformShader)
+      gl.uniformMatrix4fv(this.uniformShader.uProjectionMatrixLocation, false, SglMat4.perspective(3.14 / 4, ratio, 1, 200))
+      this.drawCar(gl)
+      stack.pop()
+    }
 
+    gl.useProgram(this.uniformShader)
+    gl.uniformMatrix4fv(this.uniformShader.uProjectionMatrixLocation, false, SglMat4.perspective(3.14 / 4, ratio, 1, 200))
     // 绘制树木
     const trees = this.game.race.trees
     for (let t in trees) {
@@ -245,8 +286,13 @@ export default class NVMCClient extends baseClient {
       this.drawObject(gl, this.buildings[i], [0.8, 0.8, 0.8, 1.0], [0.2, 0.2, 0.2, 1.0])
     }
 
+    if (this.currentCamera === 3) {
+      drawWindshield(gl, this.perVertexColorShader, this.windshield)
+      drawRearmirror(gl, this.perVertexColorShader, this.rearmirror)
+    }
+
     gl.useProgram(null)
-    gl.disable(gl.DEPTH_TEST)
+    // gl.disable(gl.DEPTH_TEST)
   }
 
   drawCar (gl) {
