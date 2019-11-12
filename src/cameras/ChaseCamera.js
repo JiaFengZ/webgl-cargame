@@ -1,5 +1,5 @@
 /**
- * 驾驶员观察视图
+ * 车辆固定俯视观察视图
  */
 export default class ChaseCamera {
   constructor() {

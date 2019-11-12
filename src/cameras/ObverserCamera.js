@@ -1,3 +1,6 @@
+/**
+ * 跟踪球控制视图/wasd控制视图
+ */
 export default class ObserverCamera {
   constructor() {
     // 模式：wasd=0,trackball=1（跟踪球）
